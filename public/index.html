@@ -540,9 +540,7 @@
     let previewInputTimer = null;
     const APP_CONFIG = window.APP_CONFIG || {};
     const API_BASE_URL = String(APP_CONFIG.API_BASE_URL || '').trim().replace(/\/+$/, '');
-    const LOCAL_PREVIEW_PATH = `${API_BASE_URL}/preview?url=`;
     const FALLBACK_PREVIEW_PROXY = 'https://corsproxy.io/?';
-    const IS_VERCEL_HOSTED = window.location.hostname.endsWith('vercel.app');
 
     function getApiUrl(pathname) {
       if (!API_BASE_URL) return pathname;
@@ -689,7 +687,7 @@
     }
 
     function getLocalPreviewUrl(url) {
-      return `${LOCAL_PREVIEW_PATH}${encodeURIComponent(url)}`;
+      return `${getApiUrl('/preview?url=')}${encodeURIComponent(url)}`;
     }
 
     function getFallbackPreviewUrl(url) {
@@ -919,10 +917,6 @@
       simulateProgress();
 
       try {
-        if (IS_VERCEL_HOSTED && !API_BASE_URL) {
-          throw new Error('Build backend is not connected. Set API_BASE_URL in public/config.js to your backend domain, then redeploy Vercel.');
-        }
-
         addLog(`Sending request to build server${API_BASE_URL ? ` (${API_BASE_URL})` : ''}...`);
         if (appIconData) addLog('Attached custom app icon.');
         if (splashImageData) addLog('Attached custom splash image.');
@@ -957,7 +951,7 @@
             response.status === 404 &&
             /NOT_FOUND|The page could not be found/i.test(raw || '')
           ) {
-            message = 'Build backend endpoint was not found. Set API_BASE_URL in public/config.js to your backend domain, then redeploy Vercel.';
+            message = 'Build backend endpoint was not found. Deploy the backend server and verify /build route is available.';
           } else if (raw) {
             message = raw.trim();
           }

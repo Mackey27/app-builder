@@ -16,7 +16,7 @@ const DEFAULT_ANDROID_BUILD_TOOLS_VERSION = process.env.ANDROID_BUILD_TOOLS_VERS
 
 app.use(cors());
 app.use(bodyParser.json({ limit: '25mb' }));
-app.use(express.static('public')); // Serve frontend files
+app.use(express.static(path.join(__dirname, 'public'))); // Serve frontend files
 
 // Helper: Generate a unique folder for each build
 const getBuildDir = (id) => path.join(__dirname, 'builds', id);
