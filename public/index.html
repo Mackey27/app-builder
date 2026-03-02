@@ -542,6 +542,7 @@
     const API_BASE_URL = String(APP_CONFIG.API_BASE_URL || '').trim().replace(/\/+$/, '');
     const LOCAL_PREVIEW_PATH = `${API_BASE_URL}/preview?url=`;
     const FALLBACK_PREVIEW_PROXY = 'https://corsproxy.io/?';
+    const IS_VERCEL_HOSTED = window.location.hostname.endsWith('vercel.app');
 
     function getApiUrl(pathname) {
       if (!API_BASE_URL) return pathname;
@@ -918,6 +919,10 @@
       simulateProgress();
 
       try {
+        if (IS_VERCEL_HOSTED && !API_BASE_URL) {
+          throw new Error('Build backend is not connected. Set API_BASE_URL in public/config.js to your backend domain, then redeploy Vercel.');
+        }
+
         addLog(`Sending request to build server${API_BASE_URL ? ` (${API_BASE_URL})` : ''}...`);
         if (appIconData) addLog('Attached custom app icon.');
         if (splashImageData) addLog('Attached custom splash image.');
@@ -932,20 +937,31 @@
         progressBar.style.width = '100%';
         addLog('Server responded. Processing file...');
 
-	        if (!response.ok) {
-	          const raw = await response.text();
-	          let message = `Server error (${response.status})`;
-	          if (response.status === 404 && !API_BASE_URL && window.location.hostname.endsWith('vercel.app')) {
-	            message = 'Backend API is not configured. Set API_BASE_URL in public/config.js and redeploy Vercel.';
-	          }
-	          if (raw) {
-	            try {
-	              const errData = JSON.parse(raw);
-              message = errData.error || message;
+        if (!response.ok) {
+          const raw = await response.text();
+          let message = `Server error (${response.status})`;
+          let parsedJsonError = '';
+
+          if (raw) {
+            try {
+              const errData = JSON.parse(raw);
+              parsedJsonError = errData.error || '';
             } catch {
-              message = raw;
+              parsedJsonError = '';
             }
           }
+
+          if (parsedJsonError) {
+            message = parsedJsonError;
+          } else if (
+            response.status === 404 &&
+            /NOT_FOUND|The page could not be found/i.test(raw || '')
+          ) {
+            message = 'Build backend endpoint was not found. Set API_BASE_URL in public/config.js to your backend domain, then redeploy Vercel.';
+          } else if (raw) {
+            message = raw.trim();
+          }
+
           throw new Error(message);
         }
 
