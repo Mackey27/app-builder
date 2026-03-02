@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebToAPK - Real Converter</title>
+  <link rel="icon" type="image/png" href="webtoapk.png?v=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- The Tailwind Play CDN is not for production. A build process is required. -->
+  <link href="styles.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #334155;
+      --fg: #f8fafc;
+      --fg-muted: #94a3b8;
+      --accent: #06b6d4;
+      --accent-strong: #0891b2;
+      --accent-glow: rgba(6, 182, 212, 0.3);
+      --accent-secondary: #8b5cf6;
+      --accent-tertiary: #f59e0b;
+      --card: #1e293b;
+      --surface-soft: #334155;
+      --border: #475569;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --gradient-1: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%);
+      --gradient-2: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+      --gradient-3: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.45;
+      letter-spacing: 0.01em;
+    }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(1000px 600px at 85% -10%, rgba(6, 182, 212, 0.15), transparent 60%),
+        radial-gradient(800px 500px at 15% 110%, rgba(139, 92, 246, 0.12), transparent 60%),
+        radial-gradient(600px 400px at 50% 50%, rgba(245, 158, 11, 0.08), transparent 50%);
+    }
+    .orb {
+      position: fixed;
+      top: 100px;
+      right: 8vw;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: var(--gradient-1);
+      opacity: 0.15;
+      filter: blur(60px);
+      pointer-events: none;
+      z-index: 0;
+      animation: orbFloat 8s ease-in-out infinite;
+    }
+    .orb::before {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      border-radius: 50%;
+      background: var(--gradient-2);
+      opacity: 0.5;
+      filter: blur(40px);
+      animation: orbFloat 6s ease-in-out infinite reverse;
+    }
+    @keyframes orbFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(-20px, 30px) scale(1.1); }
+    }
+    
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      padding: 0.4rem 1rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(6, 182, 212, 0.1);
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+    }
+    .eyebrow-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--accent-glow); }
+      50% { opacity: 0.8; box-shadow: 0 0 0 8px rgba(6, 182, 212, 0); }
+    }
+    .gradient-text {
+      background: var(--gradient-1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .gradient-text-secondary {
+      background: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .btn-primary {
+      background: var(--gradient-1);
+      color: #ffffff;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      border: none;
+      box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4), 0 0 0 1px rgba(6, 182, 212, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
+    }
+    .btn-primary:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5), 0 0 0 1px rgba(6, 182, 212, 0.3);
+    }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-secondary {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    .btn-secondary:hover { 
+      border-color: var(--accent); 
+      color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(6, 182, 212, 0.2);
+    }
+    
+    .hero-form {
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(6, 182, 212, 0.1);
+    }
+    .url-input {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+      min-height: 54px;
+      font-size: 1.02rem;
+      color: var(--fg);
+    }
+    .url-input:focus { 
+      border-color: var(--accent); 
+      box-shadow: 0 0 0 3px var(--accent-glow), 0 0 20px rgba(6, 182, 212, 0.2); 
+      outline: none; 
+      background: var(--bg-card);
+    }
+    .url-input::placeholder { color: var(--fg-muted); }
+    
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+    .modal-overlay.active { opacity: 1; pointer-events: all; }
+    .modal-content {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 500px;
+      padding: 1.5rem;
+      box-shadow: 0 25px 60px -20px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(6, 182, 212, 0.2);
+    }
+    .preview-modal-content {
+      width: min(92vw, 860px);
+      max-width: 860px;
+    }
+    
+    .terminal { 
+      background: var(--bg-secondary); 
+      border-radius: 12px; 
+      font-family: 'JetBrains Mono', monospace; 
+      font-size: 12px; 
+      height: 150px; 
+      overflow-y: auto; 
+      padding: 1rem; 
+      border: 1px solid var(--border); 
+      color: var(--success);
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    .terminal-error { color: var(--error); }
+    .upload-card { 
+      background: var(--bg-secondary); 
+      border: 1px solid var(--border); 
+      transition: all 0.3s ease;
+      border-radius: 12px;
+    }
+    .upload-card:hover { 
+      border-color: var(--accent); 
+      background: var(--surface-soft);
+      box-shadow: 0 4px 20px rgba(6, 182, 212, 0.15);
+    }
+    .upload-label { display: block; color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-weight: 600; }
+    .upload-input { width: 100%; font-size: 12px; color: var(--fg); background: transparent; }
+    .upload-meta { color: var(--fg-muted); font-size: 11px; margin-top: 8px; min-height: 16px; }
+    .panel {
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+    .preview-grid { display: grid; grid-template-columns: minmax(260px, 320px); justify-content: center; gap: 20px; }
+    .phone-preview { 
+      width: min(100%, 320px); 
+      border: 2px solid var(--accent); 
+      border-radius: 28px; 
+      background: linear-gradient(145deg, var(--bg-secondary), var(--bg-card)); 
+      padding: 12px; 
+      position: relative;
+      box-shadow: 0 20px 50px -15px rgba(6, 182, 212, 0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .phone-shell { 
+      border: 1px solid var(--border); 
+      border-radius: 20px; 
+      overflow: hidden; 
+      background: #000;
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+    }
+    .phone-notch { 
+      height: 16px; 
+      background: linear-gradient(90deg, #1a1a2e, #16213e); 
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .phone-notch::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 4px;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 8px;
+      background: #0f172a;
+      border-radius: 4px;
+    }
+    .phone-screen { 
+      height: 560px; 
+      background: #ffffff; 
+      position: relative; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      overflow: hidden;
+    }
+    .phone-screen img { width: 100%; height: 100%; object-fit: cover; }
+    .phone-screen iframe { width: 100%; height: 100%; border: 0; background: #ffffff; }
+    .splash-placeholder { 
+      font-size: 12px; 
+      letter-spacing: 0.1em; 
+      color: var(--fg-muted); 
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+    .icon-chip { 
+      margin: 12px auto 8px; 
+      width: 48px; 
+      height: 48px; 
+      border-radius: 14px; 
+      border: 2px solid var(--accent); 
+      background: linear-gradient(145deg, var(--bg-secondary), var(--surface-soft)); 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+    }
+    .icon-chip img { width: 100%; height: 100%; object-fit: cover; }
+    .icon-fallback { 
+      color: var(--accent); 
+      font-size: 20px; 
+      font-weight: 700;
+      text-shadow: 0 0 20px var(--accent-glow);
+    }
+    .phone-label { 
+      text-align: center; 
+      color: var(--accent); 
+      font-size: 12px; 
+      letter-spacing: 0.15em; 
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .preview-focus { animation: previewPulse 900ms ease; }
+    .reveal-up { opacity: 0; transform: translateY(20px); animation: riseIn 700ms ease forwards; }
+    .reveal-delay { animation-delay: 150ms; }
+    @keyframes riseIn { to { opacity: 1; transform: translateY(0); } }
+    @keyframes previewPulse {
+      0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }
+      100% { box-shadow: 0 0 0 20px rgba(6, 182, 212, 0); }
+    }
+    .progress-glow {
+      background: var(--gradient-1);
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--gradient-1);
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      margin-right: 8px;
+    }
+    .step-item:hover .step-number {
+      transform: scale(1.1);
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+    .step-item {
+      transition: all 0.3s ease;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-left: -12px;
+    }
+    .step-item:hover {
+      background: rgba(6, 182, 212, 0.1);
+    }
+    @media (max-width: 768px) {
+      .hero-form { padding: 1.25rem; }
+      .preview-grid { grid-template-columns: minmax(240px, 300px); }
+      .orb { display: none; }
+    }
+    .feature-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: 999px;
+      font-size: 0.875rem;
+      color: var(--accent);
+      font-weight: 500;
+    }
+    .feature-badge svg {
+      width: 16px;
+      height: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="orb"></div>
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-[var(--bg-secondary)]/95 backdrop-blur-xl border-b border-[var(--border)]">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl border border-[var(--accent)] bg-[var(--bg-card)] flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.3)]">
+          <svg class="w-5 h-5 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        </div>
+        <span class="text-lg font-bold tracking-tight text-[var(--fg)]">WebTo<span class="text-[var(--accent)]">APK</span></span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="feature-badge">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Live Backend
+        </span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="relative min-h-screen flex items-center pt-14">
+    <div class="max-w-7xl mx-auto px-4 py-20 w-full min-h-[calc(100vh-56px)] flex flex-col">
+        <div class="reveal-up w-full max-w-4xl mx-auto text-center">
+          <span class="eyebrow"><span class="eyebrow-dot"></span>No login required. No limits. Just real APKs.</span>
+          <h1 class="text-4xl lg:text-6xl font-bold leading-tight mb-6">
+            Convert Any Website To <span class="gradient-text">Real APK</span>
+          </h1>
+          <p class="text-lg text-[var(--fg-muted)] mb-10 max-w-xl mx-auto">
+            Transform your web app into a native Android application with custom icons and splash screens.
+          </p>
+
+	          <div class="hero-form panel p-5 md:p-6 flex flex-col gap-4 mb-6">
+	            <input type="url" id="websiteUrl" class="url-input w-full px-4 py-3 rounded-lg text-[var(--fg)] font-mono" placeholder="https://google.com">
+	            <input type="text" id="appName" class="url-input w-full px-4 py-3 rounded-lg text-[var(--fg)]" placeholder="App Name (e.g., My Store)">
+              <div class="grid sm:grid-cols-2 gap-3">
+                <div class="upload-card rounded-lg p-3">
+                  <label class="upload-label" for="appIconInput">App Icon</label>
+                  <input id="appIconInput" class="upload-input" type="file" accept="image/png,image/jpeg,image/webp">
+                  <div id="appIconMeta" class="upload-meta">Optional. Used for Android icon config.</div>
+                </div>
+                <div class="upload-card rounded-lg p-3">
+                  <label class="upload-label" for="splashImageInput">Splash Image</label>
+                  <input id="splashImageInput" class="upload-input" type="file" accept="image/png,image/jpeg,image/webp">
+                  <div id="splashMeta" class="upload-meta">Optional. Used for Android splash config.</div>
+                </div>
+              </div>
+	            
+		            <button id="buildApkBtn" class="btn-primary w-full py-3 rounded-lg font-semibold text-base flex items-center justify-center gap-2">
+		              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+		              Generate Real APK
+	            </button>
+              <button id="previewBtn" class="btn-secondary w-full py-3 rounded-lg flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                Preview Android
+              </button>
+	          </div>
+
+	          <div id="errorMsg" class="hidden text-[var(--error)] text-sm"></div>
+        </div>
+
+	        <div class="flex justify-center w-full reveal-up reveal-delay mt-12 lg:mt-16">
+            <div class="w-full max-w-4xl">
+		               <div class="panel p-6 md:p-8">
+                 <h3 class="text-xl font-bold mb-5 flex items-center gap-2">
+                   <svg class="w-6 h-6 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                   How it works
+                 </h3>
+                 <ol class="text-[var(--fg-muted)] text-sm space-y-3">
+                   <li class="step-item"><span class="step-number">1</span>Tap Preview Android to open the modal preview.</li>
+                   <li class="step-item"><span class="step-number">2</span>Enter URL, name, icon, and splash.</li>
+                   <li class="step-item"><span class="step-number">3</span>Server creates Cordova project with icon/splash config.</li>
+                   <li class="step-item"><span class="step-number">4</span>Gradle compiles native Android APK.</li>
+                   <li class="step-item"><span class="step-number">5</span>Download APK and test on device.</li>
+                 </ol>
+               </div>
+            </div>
+        </div>
+	    </div>
+	  </section>
+
+	  <!-- Processing Modal -->
+  <div id="buildModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold mb-4">Building APK...</h3>
+      <p class="text-[var(--muted)] text-sm mb-4">This process takes about 1-2 minutes. Please wait.</p>
+      
+      <div id="terminalOutput" class="terminal mb-4">
+        <div class="opacity-70">Connecting to server...</div>
+      </div>
+      
+      <div id="progressBar" class="w-full h-2 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
+        <div class="h-full progress-glow transition-all duration-300" style="width: 0%"></div>
+      </div>
+      
+      <div id="modalActions" class="hidden mt-6 flex justify-between">
+         <button id="cancelBtn" class="px-4 py-2 border border-[var(--border)] rounded-lg hover:border-[var(--error)] text-[var(--muted)]">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Android Preview Modal -->
+  <div id="previewModal" class="modal-overlay">
+    <div class="modal-content preview-modal-content">
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <h3 class="text-xl font-bold mb-1">Android Preview</h3>
+          <p class="text-[var(--muted)] text-sm">Shows URL preview or splash image if URL is empty.</p>
+        </div>
+        <button id="previewCloseBtn" class="btn-secondary px-4 py-2 rounded-lg text-sm">Close</button>
+      </div>
+      <div id="previewPanel" class="panel p-6">
+        <div class="preview-grid">
+          <div class="phone-preview">
+            <div class="phone-shell">
+              <div class="phone-notch"></div>
+              <div class="phone-screen" id="androidSplashPreview">
+                <iframe id="androidWebPreview" class="hidden" loading="lazy" title="Android web preview"></iframe>
+                <img id="androidSplashImage" class="hidden" alt="Android splash preview">
+                <div id="androidSplashPlaceholder" class="splash-placeholder">Enter URL For Preview</div>
+              </div>
+            </div>
+            <div class="flex items-center justify-center gap-4 mt-3">
+              <div class="icon-chip" title="Default Icon">
+                <svg class="w-6 h-6 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+              </div>
+              <div class="text-[var(--fg-muted)] text-xs">→</div>
+              <div class="icon-chip" title="Custom App Icon">
+                <img id="androidIconImage" class="hidden w-full h-full object-cover" alt="Custom icon preview">
+                <span id="androidIconFallback" class="text-[var(--accent)] text-lg font-bold">?</span>
+              </div>
+            </div>
+            <div class="phone-label mt-2">Default → Custom Icon</div>
+            <div id="splashPreviewLabel" class="phone-label mt-2 text-xs opacity-70 hidden">Splash Screen</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const buildApkBtn = document.getElementById('buildApkBtn');
+    const buildModal = document.getElementById('buildModal');
+    const previewModal = document.getElementById('previewModal');
+    const previewBtn = document.getElementById('previewBtn');
+    const previewCloseBtn = document.getElementById('previewCloseBtn');
+    const previewPanel = document.getElementById('previewPanel');
+    const terminalOutput = document.getElementById('terminalOutput');
+    const progressBar = document.querySelector('#progressBar > div');
+    const modalActions = document.getElementById('modalActions');
+    const errorMsg = document.getElementById('errorMsg');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const websiteUrlInput = document.getElementById('websiteUrl');
+    const appNameInput = document.getElementById('appName');
+    const appIconInput = document.getElementById('appIconInput');
+    const splashImageInput = document.getElementById('splashImageInput');
+    const appIconMeta = document.getElementById('appIconMeta');
+    const splashMeta = document.getElementById('splashMeta');
+    const androidWebPreview = document.getElementById('androidWebPreview');
+    const androidIconImage = document.getElementById('androidIconImage');
+    const androidIconFallback = document.getElementById('androidIconFallback');
+    const androidSplashImage = document.getElementById('androidSplashImage');
+    const androidSplashPlaceholder = document.getElementById('androidSplashPlaceholder');
+    const splashPreviewLabel = document.getElementById('splashPreviewLabel');
+
+    let appIconData = '';
+    let splashImageData = '';
+    let progressInterval;
+    let currentPreviewUrl = '';
+    let previewInputTimer = null;
+    const LOCAL_PREVIEW_PATH = '/preview?url=';
+    const FALLBACK_PREVIEW_PROXY = 'https://corsproxy.io/?';
+
+    function setError(message) {
+      if (!message) {
+        errorMsg.classList.add('hidden');
+        errorMsg.textContent = '';
+        return;
+      }
+      errorMsg.textContent = message;
+      errorMsg.classList.remove('hidden');
+    }
+
+    function addLog(text, isError = false) {
+      const line = document.createElement('div');
+      line.textContent = `> ${text}`;
+      if (isError) line.classList.add('terminal-error');
+      terminalOutput.appendChild(line);
+      terminalOutput.scrollTop = terminalOutput.scrollHeight;
+    }
+
+    function simulateProgress() {
+      let p = 0;
+      progressBar.style.width = '0%';
+      progressInterval = setInterval(() => {
+        if (p < 90) {
+          p += Math.random() * 5;
+          progressBar.style.width = `${p}%`;
+        }
+      }, 1000);
+    }
+
+    function normalizeWebsiteUrl(rawUrl) {
+      let candidate = (rawUrl || '').trim();
+      if (!candidate) return '';
+
+      if (!/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(candidate)) {
+        candidate = `https://${candidate}`;
+      }
+
+      let parsed;
+      try {
+        parsed = new URL(candidate);
+      } catch {
+        throw new Error('Invalid URL. Example: https://example.com');
+      }
+
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        throw new Error('Only http:// or https:// URLs are supported.');
+      }
+
+      if (!parsed.hostname) {
+        throw new Error('Invalid URL hostname.');
+      }
+
+      return parsed.toString();
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes) return '0 B';
+      const units = ['B', 'KB', 'MB'];
+      let value = bytes;
+      let unit = 0;
+      while (value >= 1024 && unit < units.length - 1) {
+        value /= 1024;
+        unit += 1;
+      }
+      return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
+    }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Failed to read image file.'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function loadImage(dataUrl) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error('Invalid image file.'));
+        image.src = dataUrl;
+      });
+    }
+
+    async function compressImage(file, maxEdge) {
+      const dataUrl = await fileToDataUrl(file);
+      const image = await loadImage(dataUrl);
+      const longest = Math.max(image.width, image.height);
+      if (longest <= maxEdge) {
+        return dataUrl;
+      }
+
+      const ratio = maxEdge / longest;
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.width * ratio));
+      canvas.height = Math.max(1, Math.round(image.height * ratio));
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/png');
+    }
+
+    function updateInitialPreview(appName) {
+      // Keep the default phone icon, no need to change it
+    }
+
+    function updateIconPreview(dataUrl) {
+      if (!dataUrl) {
+        androidIconImage.classList.add('hidden');
+        androidIconFallback.classList.remove('hidden');
+        return;
+      }
+
+      androidIconImage.src = dataUrl;
+      androidIconImage.classList.remove('hidden');
+      androidIconFallback.classList.add('hidden');
+    }
+
+    function updateSplashPreview(dataUrl) {
+      if (!dataUrl) {
+        androidSplashImage.classList.add('hidden');
+        androidSplashImage.removeAttribute('src');
+        splashPreviewLabel.classList.add('hidden');
+        setPreviewPlaceholder(currentPreviewUrl ? 'Preview Loading...' : 'Enter URL For Preview');
+        applyPreviewMode();
+        return;
+      }
+
+      androidSplashImage.src = dataUrl;
+      androidSplashImage.classList.remove('hidden');
+      splashPreviewLabel.classList.remove('hidden');
+      applyPreviewMode();
+    }
+
+    function setPreviewPlaceholder(message) {
+      androidSplashPlaceholder.textContent = message;
+    }
+
+    function getLocalPreviewUrl(url) {
+      return `${LOCAL_PREVIEW_PATH}${encodeURIComponent(url)}`;
+    }
+
+    function getFallbackPreviewUrl(url) {
+      return `${FALLBACK_PREVIEW_PROXY}${encodeURIComponent(url)}`;
+    }
+
+    function looksLikePreviewError(text) {
+      return /Cannot GET \/preview|Invalid preview URL|Preview fetch failed|Could not load this URL|Preview request timed out/i.test(text || '');
+    }
+
+    function applyPreviewMode() {
+      if (currentPreviewUrl) {
+        androidWebPreview.classList.remove('hidden');
+        androidSplashImage.classList.add('hidden');
+        androidSplashPlaceholder.classList.add('hidden');
+        return;
+      }
+
+      androidWebPreview.classList.add('hidden');
+      androidWebPreview.removeAttribute('src');
+      androidWebPreview.removeAttribute('srcdoc');
+
+      if (splashImageData) {
+        androidSplashImage.classList.remove('hidden');
+        androidSplashPlaceholder.classList.add('hidden');
+        splashPreviewLabel.classList.remove('hidden');
+      } else {
+        androidSplashImage.classList.add('hidden');
+        androidSplashPlaceholder.classList.remove('hidden');
+        splashPreviewLabel.classList.add('hidden');
+      }
+    }
+
+    function setWebPreviewUrl(url) {
+      if (!url) {
+        currentPreviewUrl = '';
+        setPreviewPlaceholder('Enter URL For Preview');
+        applyPreviewMode();
+        return;
+      }
+
+      if (currentPreviewUrl === url) {
+        applyPreviewMode();
+        return;
+      }
+
+      currentPreviewUrl = url;
+      androidWebPreview.removeAttribute('srcdoc');
+      androidWebPreview.src = getLocalPreviewUrl(url);
+      applyPreviewMode();
+    }
+
+    function refreshWebPreviewFromInput(options = {}) {
+      const rawUrl = websiteUrlInput.value.trim();
+      if (!rawUrl) {
+        setWebPreviewUrl('');
+        return;
+      }
+
+      let normalizedUrl = '';
+      try {
+        normalizedUrl = normalizeWebsiteUrl(rawUrl);
+      } catch {
+        currentPreviewUrl = '';
+        setPreviewPlaceholder('Enter Valid URL');
+        applyPreviewMode();
+        return;
+      }
+
+      if (options.writeNormalized) {
+        websiteUrlInput.value = normalizedUrl;
+      }
+      setWebPreviewUrl(normalizedUrl);
+    }
+
+    function scheduleWebPreviewRefresh() {
+      if (previewInputTimer) {
+        clearTimeout(previewInputTimer);
+      }
+      previewInputTimer = setTimeout(() => {
+        refreshWebPreviewFromInput();
+      }, 350);
+    }
+
+    function focusPreviewPanel() {
+      if (!previewPanel) return;
+      previewPanel.classList.remove('preview-focus');
+      void previewPanel.offsetWidth;
+      previewPanel.classList.add('preview-focus');
+    }
+
+    function openPreviewModal() {
+      previewModal.classList.add('active');
+      focusPreviewPanel();
+    }
+
+    function closePreviewModal() {
+      previewModal.classList.remove('active');
+    }
+
+    appNameInput.addEventListener('input', () => {
+      updateInitialPreview(appNameInput.value);
+    });
+
+    androidWebPreview.addEventListener('load', () => {
+      if (!currentPreviewUrl) return;
+
+      try {
+        const iframeDoc = androidWebPreview.contentDocument;
+        const bodyText = iframeDoc?.body?.innerText || '';
+        const titleText = iframeDoc?.title || '';
+        const combinedText = `${titleText} ${bodyText}`;
+
+        if (looksLikePreviewError(combinedText)) {
+          // Check for specific error types
+          const bodyLower = bodyText.toLowerCase();
+          if (bodyLower.includes('preview blocked') || bodyLower.includes('blocks preview')) {
+            setPreviewPlaceholder('Preview Blocked - APK Will Still Work');
+          } else if (bodyLower.includes('failed to load')) {
+            setPreviewPlaceholder('Failed to Load Preview');
+          } else if (bodyLower.includes('invalid url')) {
+            setPreviewPlaceholder('Invalid URL');
+          } else if (bodyLower.includes('timed out') || bodyLower.includes('timeout')) {
+            setPreviewPlaceholder('Preview Timed Out');
+          } else {
+            setPreviewPlaceholder('Preview Not Available');
+          }
+
+          androidWebPreview.classList.add('hidden');
+          androidSplashPlaceholder.classList.remove('hidden');
+        }
+      } catch {
+        // Ignore cross-origin access restrictions
+      }
+    });
+
+    websiteUrlInput.addEventListener('input', scheduleWebPreviewRefresh);
+    websiteUrlInput.addEventListener('blur', () => {
+      refreshWebPreviewFromInput({ writeNormalized: false });
+    });
+
+    appIconInput.addEventListener('change', async (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) {
+        appIconData = '';
+        appIconMeta.textContent = 'Optional. Used for Android icon config.';
+        updateIconPreview('');
+        return;
+      }
+
+      if (file.size > 8 * 1024 * 1024) {
+        appIconInput.value = '';
+        appIconData = '';
+        updateIconPreview('');
+        setError('App icon is too large. Please choose a file under 8MB.');
+        return;
+      }
+
+      try {
+        setError('');
+        appIconData = await compressImage(file, 1024);
+        updateIconPreview(appIconData);
+        appIconMeta.textContent = `${file.name} (${formatBytes(file.size)})`;
+      } catch (error) {
+        appIconInput.value = '';
+        appIconData = '';
+        updateIconPreview('');
+        setError(error.message);
+      }
+    });
+
+    splashImageInput.addEventListener('change', async (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) {
+        splashImageData = '';
+        splashMeta.textContent = 'Optional. Used for Android splash config.';
+        updateSplashPreview('');
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        splashImageInput.value = '';
+        splashImageData = '';
+        updateSplashPreview('');
+        setError('Splash image is too large. Please choose a file under 10MB.');
+        return;
+      }
+
+      try {
+        setError('');
+        splashImageData = await compressImage(file, 2048);
+        updateSplashPreview(splashImageData);
+        splashMeta.textContent = `${file.name} (${formatBytes(file.size)})`;
+      } catch (error) {
+        splashImageInput.value = '';
+        splashImageData = '';
+        updateSplashPreview('');
+        setError(error.message);
+      }
+    });
+
+    buildApkBtn.addEventListener('click', async () => {
+      const rawUrl = websiteUrlInput.value.trim();
+      const appName = appNameInput.value.trim();
+      const themeColor = '#00d9ff';
+      let url = '';
+
+      if (!rawUrl || !appName) {
+        setError('Please enter both URL and App Name.');
+        return;
+      }
+
+      try {
+        url = normalizeWebsiteUrl(rawUrl);
+        websiteUrlInput.value = url;
+        setWebPreviewUrl(url);
+      } catch (urlError) {
+        setError(urlError.message);
+        return;
+      }
+
+      setError('');
+      terminalOutput.innerHTML = '<div class="opacity-70">Initializing build...</div>';
+      buildModal.classList.add('active');
+      modalActions.classList.add('hidden');
+      buildApkBtn.disabled = true;
+      simulateProgress();
+
+      try {
+        addLog('Sending request to Node.js server...');
+        if (appIconData) addLog('Attached custom app icon.');
+        if (splashImageData) addLog('Attached custom splash image.');
+
+        const response = await fetch('/build', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, appName, themeColor, appIconData, splashImageData })
+        });
+
+        clearInterval(progressInterval);
+        progressBar.style.width = '100%';
+        addLog('Server responded. Processing file...');
+
+        if (!response.ok) {
+          const raw = await response.text();
+          let message = `Server error (${response.status})`;
+          if (raw) {
+            try {
+              const errData = JSON.parse(raw);
+              message = errData.error || message;
+            } catch {
+              message = raw;
+            }
+          }
+          throw new Error(message);
+        }
+
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `${appName.replace(/\s+/g, '-')}.apk`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        addLog('APK downloaded successfully!');
+        addLog('Check your downloads folder.');
+        modalActions.classList.remove('hidden');
+      } catch (err) {
+        clearInterval(progressInterval);
+        progressBar.style.width = '0%';
+        addLog(`Error: ${err.message}`, true);
+        addLog('Make sure Node.js server is running and Android SDK is installed.', true);
+        modalActions.classList.remove('hidden');
+      } finally {
+        buildApkBtn.disabled = false;
+      }
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      buildModal.classList.remove('active');
+    });
+    previewCloseBtn.addEventListener('click', closePreviewModal);
+    previewModal.addEventListener('click', (event) => {
+      if (event.target === previewModal) {
+        closePreviewModal();
+      }
+    });
+    previewBtn.addEventListener('click', () => {
+      refreshWebPreviewFromInput({ writeNormalized: true });
+      openPreviewModal();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closePreviewModal();
+      }
+    });
+
+    updateInitialPreview(appNameInput.value);
+    updateIconPreview('');
+    updateSplashPreview('');
+    refreshWebPreviewFromInput();
+  </script>
+  <!-- Footer -->
+  <footer class="fixed bottom-0 left-0 right-0 z-50 py-3 text-center text-xs text-[var(--fg-muted)] bg-[var(--bg)]/80 backdrop-blur border-t border-[var(--border)]">
+    <span>&copy; <span id="year"></span> Developed by <span class="text-[var(--accent)] font-medium">Nino Mark Zaspa</span>. All rights reserved.</span>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,2 @@
+[Build 1772346425682] Error: Build failed: Failed to find 'ANDROID_HOME' environment variable. Try setting it manually.
+Failed to find 'android' command in your 'PATH'. Try update your 'PATH' to include path to valid SDK directory.
