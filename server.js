@@ -8,6 +8,7 @@ const archiver = require('archiver');
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
+const IS_VERCEL_RUNTIME = process.env.VERCEL === '1' || Boolean(process.env.VERCEL_URL);
 const APK_EXPORT_DIR = path.join(__dirname, 'builds', '_apks');
 const DEFAULT_CORDOVA_ANDROID_VERSION = process.env.CORDOVA_ANDROID_VERSION || '13.0.0';
 const DEFAULT_ANDROID_COMPILE_SDK_VERSION = process.env.ANDROID_COMPILE_SDK_VERSION || '34';
@@ -145,7 +146,11 @@ const PREVIEW_FETCH_TIMEOUT_MS = 15000;
 const IFRAME_BLOCKING_HOSTS = ['google.com', 'youtube.com', 'facebook.com', 'twitter.com', 'x.com', 'instagram.com', 'linkedin.com'];
 
 app.get('/health', (req, res) => {
-    res.json({ status: 'ok' });
+    res.json({
+        status: 'ok',
+        runtime: IS_VERCEL_RUNTIME ? 'vercel' : 'node',
+        canBuildApk: !IS_VERCEL_RUNTIME
+    });
 });
 
 app.get('/preview', async (req, res) => {
@@ -306,6 +311,12 @@ app.get('/preview', async (req, res) => {
 });
 
 app.post('/build', async (req, res) => {
+    if (IS_VERCEL_RUNTIME) {
+        return res.status(503).json({
+            error: 'APK building is not supported on Vercel serverless. Deploy this backend on a VM/container with Java + Android SDK + Gradle + Cordova, then set API_BASE_URL to that backend.'
+        });
+    }
+
     const { url, appName, themeColor, appIconData, splashImageData } = req.body;
     let normalizedUrl;
     try {

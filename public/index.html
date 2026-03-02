@@ -974,8 +974,13 @@
       } catch (err) {
         clearInterval(progressInterval);
         progressBar.style.width = '0%';
-        addLog(`Error: ${err.message}`, true);
-        addLog('Make sure the build server is running with Java, Cordova, and Android SDK installed.', true);
+        const message = String(err && err.message ? err.message : 'Unknown error');
+        addLog(`Error: ${message}`, true);
+        if (/not supported on Vercel serverless/i.test(message)) {
+          addLog('Use Vercel for frontend only. Run backend on VM/container and set API_BASE_URL in public/config.js.', true);
+        } else {
+          addLog('Make sure the build server is running with Java, Cordova, and Android SDK installed.', true);
+        }
         modalActions.classList.remove('hidden');
       } finally {
         buildApkBtn.disabled = false;
