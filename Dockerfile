@@ -15,6 +15,7 @@ ENV PATH=${PATH}:${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platfo
 
 # Update this arg if Google revs the commandline-tools package id.
 ARG ANDROID_CMDLINE_TOOLS_VERSION=11076708
+ARG GRADLE_VERSION=9.3.1
 
 RUN mkdir -p ${ANDROID_HOME}/cmdline-tools \
     && wget -q "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS_VERSION}_latest.zip" -O /tmp/cmdline-tools.zip \
@@ -25,6 +26,12 @@ RUN mkdir -p ${ANDROID_HOME}/cmdline-tools \
 RUN yes | sdkmanager --licenses >/dev/null
 RUN sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 RUN npm install -g cordova@12
+
+RUN mkdir -p /opt/gradle \
+    && wget -q "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -O /tmp/gradle.zip \
+    && unzip -q /tmp/gradle.zip -d /opt/gradle \
+    && rm -f /tmp/gradle.zip
+ENV PATH=${PATH}:/opt/gradle/gradle-${GRADLE_VERSION}/bin
 
 WORKDIR /app
 

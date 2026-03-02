@@ -23,6 +23,10 @@ curl http://localhost:3000/health
 Use the same Dockerfile on Railway/Render/Fly.io/VPS Docker.
 Expose port `3000` (or platform `PORT` env, already supported).
 
+If you see a Gradle wrapper error like:
+`Test of distribution url https://services.gradle.org/distributions/gradle-8.7-bin.zip failed`,
+it is usually outbound network/proxy/firewall blocking from the server.
+
 ## 3) Point frontend to backend
 
 Edit `public/config.js`:

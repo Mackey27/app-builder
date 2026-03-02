@@ -86,12 +86,38 @@ const safeRemove = (targetPath) => {
     }
 };
 const runOrThrow = (command, label) => {
-    const result = shell.exec(command, { silent: true });
-    if (result.code !== 0) {
+    return runOrThrowWithRetry(command, label, { retries: 0 });
+};
+const runOrThrowWithRetry = (command, label, options = {}) => {
+    const retries = Number.isInteger(options.retries) && options.retries > 0 ? options.retries : 0;
+    const retryOn = typeof options.retryOn === 'function' ? options.retryOn : () => false;
+
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+        const result = shell.exec(command, { silent: true });
+        if (result.code === 0) {
+            return result;
+        }
+
         const details = (result.stderr || result.stdout || '').trim();
+        const shouldRetry = attempt < retries && retryOn(details);
+        if (shouldRetry) {
+            console.warn(`${label}: transient failure, retrying (${attempt + 1}/${retries})...`);
+            continue;
+        }
+
         throw new Error(details ? `${label}: ${details}` : label);
     }
-    return result;
+};
+const isGradleWrapperNetworkIssue = (details) =>
+    /Test of distribution url .*gradle-[\d.]+-bin\.zip failed/i.test(details || '') ||
+    /services\.gradle\.org/i.test(details || '') ||
+    /Read timed out/i.test(details || '') ||
+    /Connection timed out/i.test(details || '');
+const normalizeBuildErrorMessage = (message) => {
+    if (isGradleWrapperNetworkIssue(message)) {
+        return `${message}\nHint: Gradle could not validate/download distribution from services.gradle.org. Check internet/proxy/firewall and retry.`;
+    }
+    return message;
 };
 const ensureAndroidSdkPackages = (androidHome) => {
     const buildToolsPath = path.join(androidHome, 'build-tools', DEFAULT_ANDROID_BUILD_TOOLS_VERSION);
@@ -312,6 +338,9 @@ app.post('/build', async (req, res) => {
         if (!shell.which('java')) {
             throw new Error('Java/JDK not found in PATH. Install JDK and restart the Node.js server.');
         }
+        if (!shell.which('gradle')) {
+            throw new Error('Gradle not found in PATH. Install Gradle and restart the Node.js server.');
+        }
         ensureAndroidSdkPackages(androidHome);
 
         // 1. Ensure the parent builds directory exists.
@@ -447,7 +476,10 @@ app.post('/build', async (req, res) => {
 
         // 6. Build APK
         console.log(`[Build ${buildId}] Compiling APK (this may take a minute)...`);
-        runOrThrow('cordova build android', 'Build failed');
+        runOrThrowWithRetry('cordova build android', 'Build failed', {
+            retries: 2,
+            retryOn: isGradleWrapperNetworkIssue
+        });
         process.chdir(originalCwd);
         movedToBuildDir = false;
 
@@ -480,8 +512,9 @@ app.post('/build', async (req, res) => {
             process.chdir(originalCwd);
             movedToBuildDir = false;
         }
-        console.error(`[Build ${buildId}] Error:`, error.message);
-        res.status(500).json({ error: error.message });
+        const normalizedError = normalizeBuildErrorMessage(error.message);
+        console.error(`[Build ${buildId}] Error:`, normalizedError);
+        res.status(500).json({ error: normalizedError });
         safeRemove(buildDir); // Cleanup on error
     }
 });
