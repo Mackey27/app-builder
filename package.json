@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "archiver": "^7.0.1",
     "body-parser": "^2.2.2",

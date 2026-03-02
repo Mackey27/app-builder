@@ -507,6 +507,7 @@
     </div>
   </div>
 
+  <script src="config.js"></script>
   <script>
     const buildApkBtn = document.getElementById('buildApkBtn');
     const buildModal = document.getElementById('buildModal');
@@ -537,8 +538,16 @@
     let progressInterval;
     let currentPreviewUrl = '';
     let previewInputTimer = null;
-    const LOCAL_PREVIEW_PATH = '/preview?url=';
+    const APP_CONFIG = window.APP_CONFIG || {};
+    const API_BASE_URL = String(APP_CONFIG.API_BASE_URL || '').trim().replace(/\/+$/, '');
+    const LOCAL_PREVIEW_PATH = `${API_BASE_URL}/preview?url=`;
     const FALLBACK_PREVIEW_PROXY = 'https://corsproxy.io/?';
+
+    function getApiUrl(pathname) {
+      if (!API_BASE_URL) return pathname;
+      if (!pathname.startsWith('/')) return `${API_BASE_URL}/${pathname}`;
+      return `${API_BASE_URL}${pathname}`;
+    }
 
     function setError(message) {
       if (!message) {
@@ -909,11 +918,11 @@
       simulateProgress();
 
       try {
-        addLog('Sending request to Node.js server...');
+        addLog(`Sending request to build server${API_BASE_URL ? ` (${API_BASE_URL})` : ''}...`);
         if (appIconData) addLog('Attached custom app icon.');
         if (splashImageData) addLog('Attached custom splash image.');
 
-        const response = await fetch('/build', {
+        const response = await fetch(getApiUrl('/build'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url, appName, themeColor, appIconData, splashImageData })
@@ -923,12 +932,15 @@
         progressBar.style.width = '100%';
         addLog('Server responded. Processing file...');
 
-        if (!response.ok) {
-          const raw = await response.text();
-          let message = `Server error (${response.status})`;
-          if (raw) {
-            try {
-              const errData = JSON.parse(raw);
+	        if (!response.ok) {
+	          const raw = await response.text();
+	          let message = `Server error (${response.status})`;
+	          if (response.status === 404 && !API_BASE_URL && window.location.hostname.endsWith('vercel.app')) {
+	            message = 'Backend API is not configured. Set API_BASE_URL in public/config.js and redeploy Vercel.';
+	          }
+	          if (raw) {
+	            try {
+	              const errData = JSON.parse(raw);
               message = errData.error || message;
             } catch {
               message = raw;
@@ -953,7 +965,7 @@
         clearInterval(progressInterval);
         progressBar.style.width = '0%';
         addLog(`Error: ${err.message}`, true);
-        addLog('Make sure Node.js server is running and Android SDK is installed.', true);
+        addLog('Make sure the build server is running with Java, Cordova, and Android SDK installed.', true);
         modalActions.classList.remove('hidden');
       } finally {
         buildApkBtn.disabled = false;

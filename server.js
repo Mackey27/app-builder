@@ -7,7 +7,7 @@ const path = require('path');
 const archiver = require('archiver');
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
 const APK_EXPORT_DIR = path.join(__dirname, 'builds', '_apks');
 const DEFAULT_CORDOVA_ANDROID_VERSION = process.env.CORDOVA_ANDROID_VERSION || '13.0.0';
 const DEFAULT_ANDROID_COMPILE_SDK_VERSION = process.env.ANDROID_COMPILE_SDK_VERSION || '34';
@@ -106,7 +106,8 @@ const ensureAndroidSdkPackages = (androidHome) => {
     }
 
     if (missing.length > 0) {
-        const sdkmanager = path.join(androidHome, 'cmdline-tools', 'latest', 'bin', 'sdkmanager.bat');
+        const sdkmanagerName = process.platform === 'win32' ? 'sdkmanager.bat' : 'sdkmanager';
+        const sdkmanager = path.join(androidHome, 'cmdline-tools', 'latest', 'bin', sdkmanagerName);
         const installCmd = fs.existsSync(sdkmanager)
             ? `"${sdkmanager}" "platform-tools" ${missing.map((pkg) => `"${pkg}"`).join(' ')}`
             : `sdkmanager "platform-tools" ${missing.map((pkg) => `"${pkg}"`).join(' ')}`;
@@ -116,6 +117,10 @@ const ensureAndroidSdkPackages = (androidHome) => {
 
 const PREVIEW_FETCH_TIMEOUT_MS = 15000;
 const IFRAME_BLOCKING_HOSTS = ['google.com', 'youtube.com', 'facebook.com', 'twitter.com', 'x.com', 'instagram.com', 'linkedin.com'];
+
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok' });
+});
 
 app.get('/preview', async (req, res) => {
     const rawUrl = req.query.url;
